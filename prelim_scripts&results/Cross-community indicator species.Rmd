@@ -1,0 +1,724 @@
+---
+title: "Cross community indicator species"
+author: "Franz Mueter"
+date: "May 26, 2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Evaluate Mantel correlations among different communities sampled during AMBON 2015. This is currently based on 65 stations sampled in 2015 where data for infauna (single grab sample), epifauna, demersal fish, zooplankton (150), and seabirds (within a 10km radius of each station) were available. 
+
+Data were examined and some taxa were grouped if they were not always identified to species. If aggregate groups made up a small fraction but were mostly identified to lower taxonomic level, I excluded them from the analysis. (Need to check Jackie / Katrin on resulting groups for infauna and epifauna, see epifauna_taxa.xlsxand infauna_taxa.xlsx).
+
+Microbes are currently not included as they were colleced at fewer stations and at different vertical layers (plus I don't have raw data).
+
+Taxa that occurred at 3 or fewer stations (< 5%) were exluded from analysis. All abundances were effort standardized (per unit area or length of transect). The resulting densities of almost all taxa were highly right-skewed and were therefore 4th root transformed. For this analysis, I standardized all abundances to a maximum of 1 for each taxon (hence abundances always range from 0 to 1), such that each taxon has the same influence on the analysis, regardless of total numerical abundance or weight in the sample.
+
+```{r prelim, include = FALSE}
+library(vegan)
+library(mgcv)
+
+# If output from 'CommunityAnalysis.R' was saved, open up the workspace, otherwise, 
+# source 'CommunityAnalysis.R':
+
+load("CommunityAnalysis results.RData")
+# OR:
+# source("CommunityAnalysis.R")
+
+```
+
+# Mantel correlations
+I computed Mantel correlations between each pair of communities and used a permutation test to assess statistical significance of the resulting correlations (function `mantel` in *vegan* package). I use Spearman rank correlations for a more robust analysis that is less influenced by extreme values in the dissimilarity matrices, although dissimilarities were generally reasonable (see 'CommunityAnalysis.R').
+
+```{r Mantel, echo = F}
+# Mantel correlations among communities (after removal of 'rare' species):
+mantel.mat <- matrix(NA, 5,5)
+dimnames(mantel.mat) <- list(c("infauna", "epifauna", "fish", "zoop", "birds"), 
+                             c("infauna", "epifauna", "fish", "zoop", "birds"))
+
+#mantel.mat
+
+mnt <- mantel(birds.bc, zoop.bc, method="spearman", perm=1999)
+mantel.mat["birds","zoop"] <- mnt$stat
+mantel.mat["zoop","birds"] <- mnt$signif
+
+mnt <- mantel(birds.bc, fish.bc, method="spearman", perm=1999)
+mantel.mat["birds","fish"] <- mnt$stat
+mantel.mat["fish","birds"] <- mnt$signif
+
+mnt <- mantel(birds.bc, epi.bc, method="spearman", perm=1999)
+mantel.mat["birds","epifauna"] <- mnt$stat
+mantel.mat["epifauna","birds"] <- mnt$signif
+
+mnt <- mantel(birds.bc, inf.bc, method="spearman", perm=1999)
+mantel.mat["birds","infauna"] <- mnt$stat
+mantel.mat["infauna","birds"] <- mnt$signif
+
+mnt <- mantel(zoop.bc, fish.bc, method="spearman", perm=1999)
+mantel.mat["zoop","fish"] <- mnt$stat
+mantel.mat["fish","zoop"] <- mnt$signif
+
+mnt <- mantel(fish.bc, epi.bc, method="spearman", perm=1999)
+mantel.mat["fish","epifauna"] <- mnt$stat
+mantel.mat["epifauna","fish"] <- mnt$signif
+
+mnt <- mantel(fish.bc, inf.bc, method="spearman", perm=1999)
+mantel.mat["fish","infauna"] <- mnt$stat
+mantel.mat["infauna","fish"] <- mnt$signif
+
+mnt <- mantel(zoop.bc, epi.bc, method="spearman", perm=1999)
+mantel.mat["zoop","epifauna"] <- mnt$stat
+mantel.mat["epifauna","zoop"] <- mnt$signif
+
+mnt <- mantel(epi.bc, inf.bc, method="spearman", perm=1999)
+mantel.mat["epifauna", "infauna"] <- mnt$stat
+mantel.mat["infauna", "epifauna"] <- mnt$signif
+
+mnt <- mantel(zoop.bc, inf.bc, method="spearman", perm=1999)
+mantel.mat["zoop","infauna"] <- mnt$stat
+mantel.mat["infauna","zoop"] <- mnt$signif
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(mantel.mat, caption = "Cross-community Mantel correlations and signficance values")
+```
+
+
+```{r, echo=FALSE, eval=FALSE}
+
+# Create full correlation matrix and matrix of p-values:
+
+library(ggcorrplot)
+
+# Create full correlation matrix and matrix of p-values:
+mantel.r <- mantel.mat
+diag(mantel.r) <- 1
+r <- mantel.r[lower.tri(mantel.r)] 
+mantel.r <- t(mantel.r)
+mantel.r[lower.tri(mantel.r)] <- r
+
+mantel.p <- mantel.mat
+diag(mantel.p) <- 0
+p <- mantel.p[upper.tri(mantel.p)] 
+mantel.p <- t(mantel.p)
+mantel.p[upper.tri(mantel.p)] <- p
+rm(r,p, mnt)
+
+ggcorrplot(mantel.r, hc.order = TRUE, type = "lower", lab=T)
+
+```
+
+```{r, echo = FALSE, eval=FALSE}
+
+# Use bioenv to identify species in one assemblage that are most strongly
+# correlated (in a Mantel correlation sense) with species in the other community.
+
+## THIS IS SLOW!!!
+# Replace with better approach such as relating individual 
+# species to ordination scores using gam (see below)
+
+epi.fish <- bioenv(epi.tf.std, fish.tf.std, upto=6, metric="manhattan")
+
+fish.epi <- bioenv(fish.tf.std, epi.tf.std, upto=3, metric="manhattan")
+fish.zoop <- bioenv(fish.tf.std, zoop.tf.std, upto=4, metric="manhattan")
+epi.inf <- bioenv(epi.tf.std, inf.tf.std, upto=3, metric="manhattan")
+birds.zoop <- bioenv(birds.tf.std, zoop.tf.std, upto=4, metric="manhattan")
+zoop.inf <- bioenv(zoop.tf.std, inf.tf.std, upto=3, metric="manhattan")
+zoop.epi <- bioenv(zoop.tf.std, epi.tf.std, upto=3, metric="manhattan")
+birds.epi <- bioenv(birds.tf.std, epi.tf.std, upto=3, metric="manhattan")
+
+
+summary(fish.epi)
+summary(fish.zoop)
+summary(birds.zoop)
+summary(epi.inf)
+summary(zoop.inf)
+summary(birds.epi)
+}
+```
+
+I identified key indicator species within a given community that are most strongly associated with other communities. I initially used `bioenv` with one community matrix as the 'biological matrix' and another community matrix as the 'environmental matrix', but the number of possible combination of even 3 or 4 species ranges in the billions, making it unrealistic to identify the 'best' combination of species in one community associated with another community through this brute-force approach (which it was not designed for).
+
+I therefore assessed the relationship of each species in a given community to those in another community through a modeling approach similar to the `ordisurf()` function in the *vegan* package. The abundance of a given species (typically dominated by zeros) from community A was associated with the best NMDS ordination of community B using a Generalized Additive Model with a Tweedie distribution for zero-inflated data, and then visualized for assessing goodness of fit using these custom functions: 
+
+I visualized the associations between key species from a community with another community (assemblage) by overlaying observed and predicted abundances of the key species on the ordination. The size of the circles in the plots below represent actual (square-root transformed) CPUE of a key species, the green contour lines represent predicted values of their CPUE from the Generalized Additive Model that was the basis for evaluating associations (based on $R^2$ and p-values from the GAM), and the blue arrow represents the linear association of thekey species with the community represented in the ordination.
+
+For interpretation of the ordination relative to environmental gradients, see 'CommunityAnalysis.R'. I included ordinations for each community with environmental vectors overlaid below for interpretation. 
+
+```{r functions}
+# Function to identify species in one community matrix that are most strongly 
+# associated with species in another community.
+
+sp.assoc <- function(X.mds,Y, gam.df=15, MIN=5) {
+# X.mds = NMDS ordination results for community X
+# Y     = Matrix of transformed & standardized species abundances for 
+#         community Y, sampled at the same sites as community X 
+#         Columns assumed to be standardized to maximum 1
+#         These are multiplied by 100 for an assumed sample size 
+#         of 100 indiviudals per sample
+# MIN   = minimum number of stations with positive catch required
+#         for a species to be included
+  X <- X.mds$points
+  # Eliminate species sampled at fewer than MIN stations:
+  Y <- Y[,apply(Y,2,function(x) sum(x>0)) >= MIN]
+  # "Standardize" to maximum of 100 'individuals' per station
+  Y <- apply(Y, 2, function(x) x/max(x) * 100)
+  out <- vector("list", ncol(Y))
+  names(out) <- colnames(Y)
+  # Fit GAM with negative binomial distribution
+  for(i in 1:ncol(Y)) {
+    dat <- data.frame(X, y=Y[,i])
+    RHS <- paste(colnames(X), collapse = ", ")
+    RHS <- paste("s(", RHS, ", k = gam.df)", sep="")
+    form <- formula(paste(c("y", RHS), collapse = " ~ "))
+    out[[i]] <- gam(form, data=dat, family=nb)
+  }
+  out
+}
+
+# Function to extract R2 and p-values
+summarize.sp.assoc <- function(assoc) {
+# assoc  = List produced by function sp.assoc
+  out <- matrix(NA, nrow=length(assoc), ncol=3)
+  dimnames(out) <- list(names(assoc), c("R.sq", "p", "dev.expl"))
+  for(i in 1:length(assoc)) {
+    sm <- summary(assoc[[i]])
+    out[i,"p"] <- sm$s.table[,"p-value"]
+    out[i,"R.sq"] <- sm$r.sq
+    out[i, "dev.expl"] <- sm$dev.expl
+  }
+  out
+}
+
+# Function to examine relationships between CPUE and ordinations:
+ef.plot <- function(mds, y, ...) {
+  ordisurf(mds$points, y, family=nb, ...)
+  ef <- envfit(mds ~ y)
+  plot(ef, labels="", lwd=2)
+}
+
+library(plotrix)
+  plot.ord <- function(mds, ef, best, TITLE, vec.lab=T) {
+    col.fun <- colorRampPalette(c("lightblue", "darkblue"))
+    # COL <- col.fun(65)[rank(env.dat[,best[1]])]
+    COL <- col.fun(65)[rank(PSBTA.hauls$Latitude)]
+    par(mar=c(0,0,2,0))
+    plot(mds$points[,1:2], cex=1.6, pch=16, col=COL, axes=F, asp=1); box()
+    title(TITLE, line=0.5, cex.main=1.5)
+    if(vec.lab) {
+      plot(ef, col="red") 
+      } else {
+        X <- ef$vectors$arrows[,1] * sqrt(ef$vectors$r)
+        Y <- ef$vectors$arrows[,2] * sqrt(ef$vectors$r)
+        arrows(0, 0, X, Y, lwd=2, length=0.12, col=2)
+      }
+    plot(mds$points[,1:2], type="n", col=COL, axes=F, asp=1); box()
+    title(TITLE, line=0.5, cex.main=1.5)
+    text(mds, cex=0.6, col=4)
+  }
+```
+
+
+## Summary of results
+For this and subsequent cross-community linkages, I selected species with a (Pseudo-) $R^2$ value of at least 0.2 that were significantly related (95% significance level) to the community ordination. In some cases, I eliminated species based on visual assessment of the results, in particular if the relationship was clearly driven by a single large value.
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#-----------------------------------------------------
+#### Infauna linked to epifaunal community:
+sp.gams <- sp.assoc(epi.mds, infauna.cpue, MIN=5)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:10,]
+inf.link.to.epi.R2 <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(xx[sp,], caption = "Infaunal species significantly associated with epifaunal community:\n") 
+
+```
+
+### Ordinations of epifaunal community with observed and predicted abundances of key infaunal species
+
+```{r, echo=FALSE, eval = TRUE, fig.cap="Ordination: epifaunal community"}
+plot.ord(mds = epi.mds, ef = epi.ef, best = epi.best, TITLE = "Epifauna", vec.lab=T)
+for(i in sp) {
+  ef.plot(epi.mds, y=infauna.cpue[,i], main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+#ordiplot(epi.mds, display=c("sites", "species"))
+#envfit(epi.mds, epi.tf.std)
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide'}
+#### Infauna associated with fish community:
+sp.gams <- sp.assoc(fish.mds, infauna.cpue, MIN=8)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:20,]
+inf.link.to.fish <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+```{r, echo=FALSE}
+knitr::kable(xx[sp,], caption = "Infaunal species significantly associated with fish community") 
+```
+
+### Ordinations of fish community with observed and predicted abundances of key infaunal species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: fish community"}
+par(mar=c(0,0,3,0))
+plot.ord(mds = fish.mds, ef = fish.ef1, best = fish.best, 
+           TITLE = "Demersal fish", vec.lab=T)
+for(i in sp) {
+  ef.plot(fish.mds, y=infauna.cpue[,i], main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+
+####  Infauna linked to zooplankton community:
+sp.gams <- sp.assoc(zoop.mds, infauna.cpue, MIN=8)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:15,]
+inf.link.to.zoop <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+
+```
+
+```{r, echo=FALSE}
+knitr::kable(xx[sp,], caption = "Infaunal species significantly associated with zooplankton community") 
+```
+
+### Ordinations of zooplankton community with observed and predicted abundances of key infaunal species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: zooplankton community"}
+plot.ord(mds = zoop.mds, ef = zoop.ef, best = zoop.best, 
+           TITLE = "Zooplankton", vec.lab=T)
+for(i in sp) {
+  ef.plot(zoop.mds, y=infauna.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+```
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+####  Infauna linked to bird community:
+sp.gams <- sp.assoc(birds.mds, infauna.cpue, MIN=8)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:15,]
+inf.link.to.birds <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(xx, caption = "Infaunal species significantly associated with seabird community") 
+```
+
+### Ordinations of seabird community with observed and predicted abundances of key infaunal species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: seabird community"}
+plot.ord(mds = birds.mds, ef = birds.ef1, best = birds.best, 
+           TITLE = "Seabirds", vec.lab=T)
+for(i in sp) {
+  ef.plot(birds.mds, y=infauna.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#-----------------------------------------------------
+####  Epifauna linked to fish community:
+sp.gams <- sp.assoc(fish.mds, epifauna.cpue, MIN=8)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:15,]
+epi.link.to.fish.R2 <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+```{r, echo=FALSE}
+knitr::kable(xx, caption = "Epifaunal species significantly associated with fish community") 
+```
+
+### Ordinations of fish community with observed and predicted abundances of key epifaunal species
+
+```{r, echo=FALSE, eval=TRUE}
+plot.ord(mds = fish.mds, ef = fish.ef1, best = fish.best, 
+           TITLE = "Demersal fish", vec.lab=T)
+for(i in sp) {
+  ef.plot(fish.mds, y=epifauna.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Epifauna linked to zoop community:
+sp.gams <- sp.assoc(zoop.mds, epifauna.cpue, MIN=8)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:15,]
+epi.link.to.zoop.R2 <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(xx, caption = "Epifaunal species significantly associated with zoopolankton community") 
+```
+
+### Ordinations of zooplankton community with observed and predicted abundances of key epifaunal species
+
+```{r, echo=FALSE, fig.cap="Ordination: zooplankton community"}
+plot.ord(mds = zoop.mds, ef = zoop.ef, best = zoop.best, 
+           TITLE = "Zooplankton", vec.lab=T)
+for(i in sp) {
+  ef.plot(zoop.mds, y=epifauna.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+#plot(zoop.mds, display="site", cex=1.2)
+#plot(zoop.ef)
+#title("Zooplankton community ordination")
+
+```
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Epifauna linked to infaunal community:
+# (had to increase to minimum of 6 to be able to fit)
+sp.gams <- sp.assoc(inf.mds, epifauna.cpue, MIN=6)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)[1:15,]
+epi.link.to.inf.R2 <- xx
+
+sort(epifauna.cpue[,'Halocynthia aurantium'])
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(xx, caption = "Epifaunal species significantly associated with infaunal community") 
+```
+
+### Ordinations of infaunal community with observed and predicted abundances of key epifaunal species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: infaunal community"}
+plot.ord(mds = inf.mds, ef = inf.ef1, best = inf.best, 
+       TITLE = "Infauna", vec.lab=T)
+for(i in sp) {
+  ef.plot(inf.mds, y=epifauna.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+```
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Zoops linked to fish community:
+sp.gams <- sp.assoc(fish.mds, zoop.cpue, MIN=5)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)
+zoop.link.to.fish <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+```{r, echo=FALSE}
+sp <- sp[-c(1,2,5)]  # Eliminate species that are driven by 1 dominant station
+knitr::kable(xx[sp,], caption = "Zooplankton species significantly associated with fish community") 
+```
+
+### Ordinations of fish community with observed and predicted abundances of key zooplankton species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: fish community"}
+plot.ord(mds = fish.mds, ef = fish.ef1, best = fish.best, 
+           TITLE = "Demersal fish", vec.lab=T)
+text(fish.mds$species[,1:2], row.names(fish.mds$species) , col="green", cex=0.6)
+for(i in sp) {
+  ef.plot(fish.mds, y=zoop.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+
+
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Seabirds linked to fish community:
+sp.gams <- sp.assoc(fish.mds, birds.dens, MIN=5)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"dev.expl"], decreasing =T),]
+round(xx, 3)
+seabird.link.to.fish <- xx
+
+#  and p < 0.9
+xx <- xx[xx[,2] < 0.9,]
+xx
+sp <- rownames(xx)
+```
+
+```{r, echo=FALSE}
+knitr::kable(xx[sp,], caption = "Seabird species associations with fish community") 
+```
+
+### Ordinations of fish community with observed and predicted abundances of key seabird species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: fish community"}
+plot.ord(mds = fish.mds, ef = fish.ef1, best = fish.best, 
+           TITLE = "Demersal fish", vec.lab=T)
+text(fish.mds$species[,1:2], row.names(fish.mds$species) , col="green", cex=0.6)
+for(i in sp) {
+  ef.plot(fish.mds, y=birds.dens[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+
+
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Zoops associated with bird community:
+sp.gams <- sp.assoc(birds.mds, zoop.cpue, MIN=5)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)
+zoop.link.to.birds <- xx   ## Assign and safe!!
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+```
+
+
+```{r, echo=FALSE}
+# Select species to include based on visual examination:
+knitr::kable(xx[sp,], caption = "Zooplankton species significantly associated with seabird community") 
+```
+
+### Ordinations of seabird community with observed and predicted abundances of key zooplankton species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: seabird community"}
+plot.ord(mds = birds.mds, ef = birds.ef1, best = birds.best, 
+           TITLE = "Seabirds", vec.lab=T)
+for(i in sp) {
+  ef.plot(birds.mds, y=zoop.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+#ordiplot(birds.mds, display=c("sites", "species"))
+#envfit(birds.mds, birds.tf.std)
+```
+
+
+***
+
+```{r, echo=FALSE, results='hide'}
+#### Fish linked to zooplankton community:
+sp.gams <- sp.assoc(zoop.mds, fish.cpue, MIN=5)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)
+fish.link.to.zoop.R2 <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+
+```
+
+```{r, echo=FALSE}
+# Select species to include based on visual examination:
+knitr::kable(xx, caption = "Demersal fish species significantly associated with zooplankton community") 
+```
+
+### Ordinations of zooplankton community with observed and predicted abundances of key fish species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: zooplankton community"}
+plot.ord(mds = zoop.mds, ef = zoop.ef, best = zoop.best, 
+           TITLE = "Zooplankton", vec.lab=T)
+for(i in sp) {
+  ef.plot(zoop.mds, y=fish.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+```
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Fish linked to bird community:
+sp.gams <- sp.assoc(birds.mds, fish.cpue, MIN=5)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"R.sq"], decreasing =T),]
+round(xx, 3)
+fish.link.to.birds.R2 <- xx
+
+# Correlations > 0.2 and p < 0.05
+xx <- xx[xx[,1] > 0.2 & xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+
+```
+
+```{r, echo=FALSE}
+# Select species to include based on visual examination:
+knitr::kable(xx, caption = "Demersal fish species significantly associated with seabird community") 
+```
+
+### Ordinations of seabird community with observed and predicted abundances of key fish species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: bird community"}
+plot.ord(mds = birds.mds, ef = birds.ef1, best = birds.best, 
+           TITLE = "Seabirds", vec.lab=T)
+for(i in sp) {
+  ef.plot(birds.mds, y=fish.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+#ordiplot(birds.mds, display=c("sites", "species"))
+#envfit(birds.mds, birds.tf.std)
+
+
+ef.plot(birds.mds, y=fish.cpue[,"Boreogadus saida"]^0.5, main="Arctic cod", 
+        bubble=2, pch=16, col="green", labcex=0, ylim=c(-0.8, 0.9))
+# Overlay all species (slightly re-scaled:
+text(0.95*birds.mds$species[,1:2], row.names(birds.mds$species) , col="red", cex=)
+
+# Highlight a few species:
+# Select species to plot:
+# sp <- c("SAGU", "KIMU")
+# text(birds.mds$species[sp,1:2], sp, col="red", cex=1.4)
+
+#ef.plot(birds.mds, y=birds.dens[,"KIMU"]^0.5, main="", bubble=2, 
+#        pch=16, col="green", labcex=0, ylim=c(-0.8, 0.9))
+```
+
+***
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+#### Seabirds associated with zooplankton community:
+sp.gams <- sp.assoc(zoop.mds, birds.dens, MIN=3)
+xx <- summarize.sp.assoc(sp.gams)
+xx <- xx[order(xx[,"dev.expl"], decreasing =T),]
+round(xx, 3)
+bird.link.to.zoop <- xx
+
+# p < 0.05
+xx <- xx[ xx[,2] < 0.05,]
+xx
+sp <- rownames(xx)
+
+```
+
+```{r, echo=FALSE}
+# Select species to include based on visual examination:
+knitr::kable(xx, caption = "Seabird species significantly associated with zooplankton community") 
+```
+
+### Ordinations of zooplankton community with observed and predicted abundances of key seabird species
+
+```{r, echo=FALSE, eval=TRUE, fig.cap="Ordination: zooplankton community"}
+plot.ord(mds = zoop.mds, ef = zoop.ef, best = zoop.best, 
+           TITLE = "Zooplankton", vec.lab=T)
+for(i in sp) {
+  ef.plot(zoop.mds, y=birds.dens[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0)
+}
+
+```
+
+```{r}
+# Seabird ordinations with different overlays:
+
+# Seabird community with total zoop CPUE
+ef.plot(birds.mds, y=apply(zoop.cpue^0.5, 1, sum), main="Total zooplankton CPUE", 
+        bubble=2, pch=16, col="green", labcex=0, ylim=c(-0.8, 0.9))
+# Overlay all bird species (slightly re-scaled:
+text(0.95*birds.mds$species[,1:2], row.names(birds.mds$species) , col="red", cex=)
+
+# Seabird community with indiviudal zooplankton species:
+ef.plot(birds.mds, y=zoop.cpue[,"Pseudocalanus.spp"]^0.5, 
+        main="Pseudocalanus spp. CPUE", bubble=2, pch=16, 
+        col="green", labcex=0, ylim=c(-0.8, 0.9))
+# Overlay all bird species (slightly re-scaled:
+text(0.95*birds.mds$species[,1:2], row.names(birds.mds$species) , col="red")
+
+# Seabird community with indiviudal zooplankton species:
+
+sp <- zoop.link.to.birds
+sp <- rownames(sp[sp[,"R.sq"]>0.1 & sp[,"p"]<0.05,])
+
+for(i in sp) {
+  ef.plot(birds.mds, y=zoop.cpue[,i]^0.5, main=i, bubble=2, 
+          pch=16, col="green", labcex=0, ylim=range(birds.mds$species[,2]))
+  text(birds.mds$species[,1:2], row.names(birds.mds$species) , col="red")
+}
+
+```

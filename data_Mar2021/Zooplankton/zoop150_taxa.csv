@@ -1,0 +1,111 @@
+species,taxon,large,gelatinous
+Acartia,Acartia,0,0
+Acartia hudsonica,Acartia,0,0
+Acartia longiremis,Acartia,0,0
+Aeginopsis laurentii,Aeginopsis laurentii,1,1
+Aglantha digitale,Aglantha digitale,1,1
+Amphipoda,other.unid,1,0
+Animalia,other.unid,0,0
+Anthomedusae,Anthomedusae,1,1
+Apherusa,Apherusa,1,0
+Aurelia,Aurelia,1,1
+Beroe,Beroe,1,1
+Bivalvia,Bivalvia,0,0
+Bougainvillia superciliaris,Bougainvillia superciliaris,1,0
+Brachyura,Brachyura,1,0
+Bryozoa,Bryozoa,0,0
+Calanoida,other.unid,0,0
+Calanus glacialis/marshallae,Calanus glacialis,1,0
+Calanus hyperboreus,Calanus hyperboreus,1,0
+Caligidae,Caligidae,0,0
+Candacia,Candacia,0,0
+Catablema vesicarium,Catablema vesicarium,1,1
+Centropages abdominalis,Centropages abdominalis,0,0
+Cerianthus,Cerianthus,0,0
+Cirripedia,Cirripedia,0,0
+Clausiidae,Clausiidae,0,0
+Clione limacina,Clione limacina,1,0
+Cnidaria,other.unid,1,1
+Ctenophora,Ctenophora,1,1
+Cumacea,other.unid,1,0
+Cyanea capillata,Cyanea capillata,1,1
+Cyclopina,Cyclopina,0,0
+Cyclopoida,other.unid,0,0
+Decapoda,Decapoda,1,0
+Dimophyes arctica,Dimophyes arctica,0,1
+Echinodermata,Echinodermata,0,0
+Epilabidocera longipedata,Epilabidocera longipedata,1,0
+Eualus gaimardii,Eualus gaimardii,1,0
+Eucalanus bungii,Eucalanus bungii,1,0
+Eukrohnia hamata,Eukrohnia hamata,1,0
+Euphausiacea,Euphausiacea,1,0
+Euphysa,Euphysa,1,1
+Euphysa flammea,Euphysa flammea,1,1
+Eurytemora,Eurytemora,0,0
+Eurytemora herdmani,Eurytemora,0,0
+Eurytemora pacifica,Eurytemora,0,0
+Evadne nordmanni,Evadne nordmanni,0,0
+Fritillaria borealis,Fritillaria borealis,0,0
+Gammaridae,other.unid,1,0
+Gastropoda,Gastropoda,0,0
+Halitholus cirratus,Halitholus cirratus,1,1
+Harpacticoida,other.unid,0,0
+Hippolytidae,Hippolytidae,1,0
+Hyperia,Hyperiidae,1,0
+Hyperiidae,Hyperiidae,1,0
+Hyperoche medusarum,Hyperoche medusarum,1,0
+Isopoda,other.unid,0,0
+Limacina helicina,Limacina helicina,0,0
+Melicertum octocostatum,Melicertum octocostatum,1,1
+Mertensia ovum,Mertensia ovum,1,1
+Metridia,Metridia,1,0
+Metridia pacifica,Metridia,1,0
+Microcalanus,Microcalanus,0,0
+Microcalanus pygmaeus,Microcalanus,0,0
+Microsetella,Microsetella,0,0
+Mitrocomella polydiademata,Mitrocomella polydiademata,1,1
+Mysida,Mysida,1,0
+Narcomedusae,Narcomedusae,1,1
+Neocalanus cristatus,Neocalanus cristatus,1,0
+Neocalanus flemingeri,Neocalanus flemingeri,1,0
+Neocalanus plumchrus,Neocalanus plumchrus,1,0
+Neomysis rayii,Neomysis rayii,1,0
+Obelia longissima,Obelia longissima,1,0
+Oikopleura,Oikopleura vanhoeffeni,1,0
+Oikopleura labradoriensis,Oikopleura labradoriensis,1,0
+Oikopleura vanhoeffeni,Oikopleura vanhoeffeni,1,0
+Oithona setigera,Oithona setigera,0,0
+Oithona similis,Oithona similis,0,0
+Onisimus,Onisimus,1,0
+Ophiuroidea,Ophiuroidea,0,0
+Ostracoda,Ostracoda,1,0
+Paguridae,Paguridae,1,0
+Pandalidae,Pandalidae,1,0
+Parasagitta elegans,Parasagitta elegans,1,0
+Phoronida,Phoronida,1,0
+Pisces,other.unid,0,0
+Plotocnide borealis,Plotocnide borealis,0,1
+Podon leuckartii,Podon leuckartii,0,0
+Polychaeta,Polychaeta,0,0
+Pseudocalanus,Pseudocalanus,0,0
+Pseudocalanus acuspes,Pseudocalanus,0,0
+Pseudocalanus mimus,Pseudocalanus,0,0
+Pseudocalanus minutus,Pseudocalanus,0,0
+Pseudocalanus newmani,Pseudocalanus,0,0
+Ptychogena lactea,Ptychogena lactea,1,1
+Rathkea octopunctata,Rathkea octopunctata,1,1
+Rotifera,other.unid,0,0
+Sarsia tubulosa,Sarsia tubulosa,1,1
+Scolecithricella minor,Scolecithricella minor,0,0
+Siphonophorae,Siphonophorae,1,0
+Sipuncula,Sipuncula,0,0
+Themisto libellula,Themisto libellula,1,0
+Themisto pacifica,Themisto pacifica,1,0
+Thysanoessa inermis,Thysanoessa inermis,1,0
+Thysanoessa longipes,Thysanoessa longipes,1,0
+Thysanoessa raschii,Thysanoessa raschii,1,0
+Thysanoessa spinifera,Thysanoessa spinifera,1,0
+Tomopteris,Tomopteris,1,0
+Tortanus discaudatus,Tortanus discaudatus,0,0
+Triconia borealis,Triconia borealis,0,0
+Typhloscolex muelleri,Typhloscolex muelleri,0,0
